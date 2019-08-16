@@ -24,7 +24,7 @@ def test_singleGPU():
             accuracy_value = session.run(accuracy, feed_dict={X_holder:mnist.test.images, y_holder:mnist.test.labels})
             print('step:%d accuracy:%.4f' %(i, accuracy_value))
 def test_multiGPU():
-    config = config.Config_mnist()
+    config = Config.Config_mnist()
     mnist = input_data.read_data_sets('data/MNIST_data', one_hot=True)
     config.nb_examples = mnist.train.num_examples
     X = []
