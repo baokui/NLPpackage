@@ -107,11 +107,11 @@ class Config_mnist(object):
                  training_steps=1000000,
                  CKPT_path="./result_mnist/CKPT/",
                  LOG_path="./result_mnist/LOG/",
-                 init_learning_rate=1e-4,
-                 end_learning_rate=1e-6,
+                 init_learning_rate=1.0,
+                 end_learning_rate=1.0,
                  dropout_prob=0.1,
                  initializer_range=0.02,
-                 clip_grad=0.1
+                 clip_grad=100
                  ):
         self.epochs = epochs
         self.CPU = CPU
