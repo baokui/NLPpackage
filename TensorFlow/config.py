@@ -111,7 +111,7 @@ class Config_mnist(object):
                  end_learning_rate=1e-6,
                  dropout_prob=0.1,
                  initializer_range=0.02,
-                 clip_grad=0.001
+                 clip_grad=0.1
                  ):
         self.epochs = epochs
         self.CPU = CPU
