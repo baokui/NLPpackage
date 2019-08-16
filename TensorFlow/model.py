@@ -25,7 +25,8 @@ def model_mnist_simple(config):
                                        decay_steps=int(config.epochs * config.nb_examples * 0.9 / config.batch_size))
         optimizer = tf.train.GradientDescentOptimizer(0.5)
         tvars = tf.trainable_variables()
-        grads, _ = tf.clip_by_global_norm(tf.gradients(loss, tvars), config.clip_grad)
+        #grads, _ = tf.clip_by_global_norm(tf.gradients(loss, tvars), config.clip_grad)
+        grads = optimizer.compute_gradients(loss,tvars)
         train_op = optimizer.minimize(loss)
         #train_op = optimizer.apply_gradients(zip(grads, tvars))
         return X_holder, y_holder, predict_y, loss, optimizer, train_op,grads
