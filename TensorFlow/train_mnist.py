@@ -4,10 +4,10 @@ import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 from model import model_mnist_simple
 import modules
-import config
+import config as Config
 import time
 def test_singleGPU():
-    config = config.Config_mnist()
+    config = Config.Config_mnist()
     mnist = input_data.read_data_sets('data/MNIST_data', one_hot=True)
     config.nb_examples = mnist.train.num_examples
     X_holder, y_holder, predict_y, loss, optimizer, train_op, _ = model_mnist_simple(config)
@@ -74,7 +74,7 @@ def main():
     t1 = time.time()
     print('single_gpu:',t0-t1)
     t0 = time.time()
-    test_multiGPU()
+    #test_multiGPU()
     t1 = time.time()
     print('multi_gpu:', t0 - t1)
 if __name__=='__main__':
