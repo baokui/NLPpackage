@@ -16,10 +16,10 @@ def test_singleGPU():
     init = tf.global_variables_initializer()
     session.run(init)
 
-    for i in range(500):
+    for i in range(10000):
         images, labels = mnist.train.next_batch(config.batch_size)
         session.run(train_op, feed_dict={X_holder:images, y_holder:labels})
-        if i % 25 == 0:
+        if i % 1000 == 0:
             accuracy_value = session.run(accuracy, feed_dict={X_holder:mnist.test.images, y_holder:mnist.test.labels})
             print('step:%d accuracy:%.4f' %(i, accuracy_value))
 def test_multiGPU():
@@ -31,10 +31,10 @@ def test_multiGPU():
     session = tf.Session()
     init = tf.global_variables_initializer()
     session.run(init)
-    for i in range(500):
+    for i in range(10000):
         images, labels = mnist.train.next_batch(config.batch_size*len(config.GPU.split(',')))
         session.run(train_op, feed_dict={X_holder: images, y_holder: labels})
-        if i % 25 == 0:
+        if i % 1000 == 0:
             accuracy_value = session.run(accuracy, feed_dict={X_holder: mnist.test.images, y_holder: mnist.test.labels})
             print('step:%d accuracy:%.4f' % (i, accuracy_value))
 def main():
