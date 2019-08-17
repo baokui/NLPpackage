@@ -2,7 +2,7 @@ import warnings
 warnings.filterwarnings('ignore')
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
-from model import model_mnist_simple
+from model import model_mnist_simple,model_mnist_simple_mutiGPU
 import modules
 import config as Config
 import time
