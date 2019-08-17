@@ -27,7 +27,7 @@ def test_multiGPU():
     config = Config.Config_mnist()
     mnist = input_data.read_data_sets('data/MNIST_data', one_hot=True)
     config.nb_examples = mnist.train.num_examples
-    X_holder, y_holder, predict_y, loss, optimizer, train_op, _ = model_mnist_simple(config)
+    X_holder, y_holder, predict_y, loss, optimizer, train_op, _ = model_mnist_simple_mutiGPU(config)
     session = tf.Session()
     init = tf.global_variables_initializer()
     session.run(init)
