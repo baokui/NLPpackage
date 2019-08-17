@@ -213,6 +213,74 @@ class ColaProcessor(DataProcessor):
         return A, B, L
 
 
+def convert_single_example(text_a,text_b, max_seq_length,
+                           tokenizer):
+    """Converts a single `InputExample` into a single `InputFeatures`."""
+    tokens_a = tokenizer.tokenize(text_a)
+    tokens_b = tokenizer.tokenize(text_b)
+
+    # The convention in BERT is:
+    # (a) For sequence pairs:
+    #  tokens:   [CLS] is this jack ##son ##ville ? [SEP] no it is not . [SEP]
+    #  type_ids: 0     0  0    0    0     0       0 0     1  1  1  1   1 1
+    # (b) For single sequences:
+    #  tokens:   [CLS] the dog is hairy . [SEP]
+    #  type_ids: 0     0   0   0  0     0 0
+    #
+    # Where "type_ids" are used to indicate whether this is the first
+    # sequence or the second sequence. The embedding vectors for `type=0` and
+    # `type=1` were learned during pre-training and are added to the wordpiece
+    # embedding vector (and position vector). This is not *strictly* necessary
+    # since the [SEP] token unambiguously separates the sequences, but it makes
+    # it easier for the model to learn the concept of sequences.
+    #
+    # For classification tasks, the first vector (corresponding to [CLS]) is
+    # used as the "sentence vector". Note that this only makes sense because
+    # the entire model is fine-tuned.
+    tokens = []
+    segment_ids = []
+    tokens.append("[CLS]")
+    segment_ids.append(0)
+    for token in tokens_a:
+        tokens.append(token)
+        segment_ids.append(0)
+    tokens.append("[SEP]")
+    segment_ids.append(0)
+    for token in tokens_b:
+        tokens.append(token)
+        segment_ids.append(1)
+    tokens.append("[SEP]")
+    segment_ids.append(1)
+
+    input_ids = tokenizer.convert_tokens_to_ids(tokens)
+
+    # The mask has 1 for real tokens and 0 for padding tokens. Only real
+    # tokens are attended to.
+    input_mask = [1] * len(input_ids)
+    while len(input_ids) < max_seq_length:
+        input_ids.append(0)
+        input_mask.append(0)
+        segment_ids.append(0)
+    return input_ids,input_mask,segment_ids
+def iter_training(tokenizer,A,B,L,Config):
+    input_ids = []
+    input_mask = []
+    segment_ids = []
+    labels = []
+    for i in range(len(A)):
+        x0,x1,x2 = convert_single_example(A[i],B[i],Config.max_seq_length,tokenizer)
+        y = int(L[i])
+        input_ids.append(x0)
+        input_mask.append(x1)
+        segment_ids.append(x2)
+        labels.append((y))
+        if len(input_ids)==Config.train_batch_size:
+            yield input_ids,input_mask,segment_ids,labels
+            input_ids = []
+            input_mask = []
+            segment_ids = []
+            labels = []
+    yield '__end__'
 def main():
     Config = config.Config_bert()
     bert_config = modeling.BertConfig.from_json_file(Config.bert_config_file)
@@ -237,6 +305,13 @@ def main():
     [loss, train_op, predictions, accuracy] = model_fn(features, None, 'train', None)
     pro = ColaProcessor()
     A,B,L = pro.get_train_examples(Config.data_dir)
+    A = A[1:]
+    B = B[1:]
+    L = L[1:]
+    tokenizer = tokenization.FullTokenizer(
+        vocab_file=Config.vocab_file, do_lower_case=Config.do_lower_case)
+    iter = iter_training(tokenizer, A, B, L, Config)
+    [x0,x1,x2,y] = next(iter)
 
 # if 1:
 #     x0 = np.random.randint(0, 100,size=[32,Config.max_seq_length])
