@@ -41,17 +41,15 @@ def model_mnist_simple_mutiGPU(config):
     batch_size = config.batch_size
     with tf.name_scope('inputs'):
         X_holder = tf.placeholder(tf.float32,shape=[None,784])
-        y_holder = tf.placeholder(tf.float32,shape=[None,784])
+        y_holder = tf.placeholder(tf.float32,shape=[None])
     with tf.name_scope('parameters'):
         Weights = tf.Variable(tf.zeros([784, 10]))
         biases = tf.Variable(tf.zeros([1,10]))
-    y = []
     p = []
     tower_grads = []
     tower_input_loss = []
     sn_op = []
     optimizer = tf.train.GradientDescentOptimizer(0.5)
-    global_step = tf.train.get_or_create_global_step()
     with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
         for i in range(len(config.GPU.split(','))):
             gpu = config.GPU.split(',')[i]
