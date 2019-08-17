@@ -356,3 +356,6 @@ def main():
                 j = 0
             _acc = sess.run(accuracy, feed_dict=feed_dict)
             print(epoch,i,_loss, _acc)
+        i += 1
+if __name__=='__main__':
+    main()
