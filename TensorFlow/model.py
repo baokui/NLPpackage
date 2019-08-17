@@ -85,14 +85,11 @@ def model_mnist_simple_mutiGPU(config):
     p = tf.concat(p, axis=0)
     # grads = modules.average_gradients(tower_grads)
     input_loss = tf.reduce_mean(tower_input_loss)
-
     # train_op = optimizer.apply_gradients(grads)
     # #train_op = tf.group(train_op, [tf.assign_add(global_step, 1)])
     # train_op = tf.group(train_op, sn_op)
-
     grads = average_gradients(tower_grads)
     train_op = optimizer.apply_gradients(grads)
-
     predict_test = tf.nn.softmax(
         tf.matmul(X_holder, Weights) + biases)
     correct_prediction = tf.equal(tf.argmax(predict_test, 1), tf.argmax(y_holder, 1))
