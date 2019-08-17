@@ -136,7 +136,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 def main():
     Config = config.Config_bert()
     bert_config = modeling.BertConfig.from_json_file(Config.bert_config_file)
-    train_examples = [1,2,3]
+    train_examples = [i for i in range(1000000)]
     num_train_steps = int(
         len(train_examples) / Config.train_batch_size * Config.num_train_epochs)
     num_warmup_steps = int(num_train_steps * Config.warmup_proportion)
@@ -149,3 +149,10 @@ def main():
         num_warmup_steps=num_warmup_steps,
         use_tpu=Config.use_tpu,
         use_one_hot_embeddings=Config.use_tpu)
+    features = {}
+    features["input_ids"] = tf.placeholder(tf.int32,shape=[None,Config.max_seq_length])
+    features["input_mask"] = tf.placeholder(tf.int32, shape=[None, Config.max_seq_length])
+    features["segment_ids"] = tf.placeholder(tf.int32, shape=[None, Config.max_seq_length])
+    features["label_ids"] = tf.placeholder(tf.int32, shape=[None])
+    [loss,train_op] = model_fn(features,None,'train',None)
+
