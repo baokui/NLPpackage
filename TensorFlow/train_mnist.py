@@ -15,13 +15,13 @@ def test_singleGPU():
     session = tf.Session()
     init = tf.global_variables_initializer()
     session.run(init)
-
-    for i in range(10000):
-        images, labels = mnist.train.next_batch(config.batch_size)
-        session.run(train_op, feed_dict={X_holder:images, y_holder:labels})
-        if i % 1000 == 0:
-            accuracy_value = session.run(accuracy, feed_dict={X_holder:mnist.test.images, y_holder:mnist.test.labels})
-            print('step:%d accuracy:%.4f' %(i, accuracy_value))
+    for epoch in range(100):
+        steps = int(config.nb_examples/config.batch_size)
+        for i in range(steps):
+            images, labels = mnist.train.next_batch(config.batch_size)
+            session.run(train_op, feed_dict={X_holder:images, y_holder:labels})
+        accuracy_value = session.run(accuracy, feed_dict={X_holder:mnist.test.images, y_holder:mnist.test.labels})
+        print('epoch:%d accuracy:%.4f' %(epoch, accuracy_value))
 def test_multiGPU():
     config = Config.Config_mnist()
     mnist = input_data.read_data_sets('data/MNIST_data', one_hot=True)
@@ -31,12 +31,13 @@ def test_multiGPU():
     session = tf.Session()
     init = tf.global_variables_initializer()
     session.run(init)
-    for i in range(10000):
-        images, labels = mnist.train.next_batch(config.batch_size*len(config.GPU.split(',')))
-        session.run(train_op, feed_dict={X_holder: images, y_holder: labels})
-        if i % 1000 == 0:
-            accuracy_value = session.run(accuracy, feed_dict={X_holder: mnist.test.images, y_holder: mnist.test.labels})
-            print('step:%d accuracy:%.4f' % (i, accuracy_value))
+    for epoch in range(100):
+        steps = int(config.nb_examples / (config.batch_size*len(config.GPU.split(','))))
+        for i in range(steps):
+            images, labels = mnist.train.next_batch(config.batch_size*len(config.GPU.split(',')))
+            session.run(train_op, feed_dict={X_holder: images, y_holder: labels})
+        accuracy_value = session.run(accuracy, feed_dict={X_holder: mnist.test.images, y_holder: mnist.test.labels})
+        print('epoch:%d accuracy:%.4f' % (epoch, accuracy_value))
 def main():
     t0 = time.time()
     test_singleGPU()
