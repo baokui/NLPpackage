@@ -110,8 +110,8 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
             train_op = optimization.create_optimizer(
                 total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
             predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-            accuracy = tf.metrics.accuracy(
-                labels=label_ids, predictions=predictions, weights=is_real_example)
+            correct_prediction = tf.equal(predictions, label_ids)
+            accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
             output_spec = [total_loss,train_op,predictions,accuracy]
         elif mode == tf.estimator.ModeKeys.EVAL:
 
@@ -166,5 +166,10 @@ def main():
 #     sess = tf.Session()
 #     init = tf.global_variables_initializer()
 #     sess.run(init)
-#     [_loss,_] = sess.run([loss,train_op],feed_dict=feed_dict)
+#     for i in range(1000):
+#         [_loss,_] = sess.run([loss,train_op],feed_dict=feed_dict)
+#         if i%10==0:
+#             _acc = sess.run(accuracy,feed_dict=feed_dict)
+#             print(_loss,_acc)
+
 
