@@ -64,6 +64,10 @@ def model_mnist_simple_mutiGPU(config):
                         tf.GraphKeys.TRAINABLE_VARIABLES,
                         scope='parameters'
                     ))
+                    for g, _ in grads:
+                        if g is None:
+                            print(g, _)
+                    grads = [t for t in grads if t[0] is not None]
                     train_op = optimizer.minimize(loss)
                     tower_grads.append(grads)
                     tower_input_loss.append(loss)
