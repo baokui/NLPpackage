@@ -76,14 +76,11 @@ def model_mnist_simple_mutiGPU(config):
                     loss = tf.reduce_mean(
                         -tf.reduce_sum(y_holder[i * config.batch_size:(i + 1) * config.batch_size] * tf.log(predict_y),
                                        1))
-                    grads = optimizer.compute_gradients(loss, var_list=tf.get_collection(
-                        tf.GraphKeys.TRAINABLE_VARIABLES,
-                        scope='parameters'
-                    ))
-                    train_op = optimizer.minimize(loss)
+                    grads = optimizer.compute_gradients(loss)
+                    #train_op = optimizer.minimize(loss)
                     tower_grads.append(grads)
                     tower_input_loss.append(loss)
-                    sn_op.append(train_op)
+                    #sn_op.append(train_op)
                     p.append(predict_y)
     p = tf.concat(p, axis=0)
     # grads = modules.average_gradients(tower_grads)
