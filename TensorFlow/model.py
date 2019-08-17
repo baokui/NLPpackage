@@ -26,7 +26,10 @@ def model_mnist_simple(config):
         optimizer = tf.train.GradientDescentOptimizer(0.5)
         tvars = tf.trainable_variables()
         #grads, _ = tf.clip_by_global_norm(tf.gradients(loss, tvars), config.clip_grad)
-        grads = optimizer.compute_gradients(loss,tvars)
+        grads = optimizer.compute_gradients(loss,var_list=tf.get_collection(
+                                          tf.GraphKeys.TRAINABLE_VARIABLES,
+                                          scope='parameters'
+                                      ))
         train_op = optimizer.minimize(loss)
         #train_op = optimizer.apply_gradients(zip(grads, tvars))
         return X_holder, y_holder, predict_y, loss, optimizer, train_op,grads
@@ -34,3 +37,45 @@ def model_mnist_simple(config):
         # train_op = tf.group(optOp, [tf.assign_add(global_step, 1)])
         # optimizer = tf.train.GradientDescentOptimizer(0.5)
         # train = optimizer.minimize(loss)
+def model_mnist_simple_mutiGPU(config):
+    batch_size = config.batch_size
+    with tf.name_scope('inputs'):
+        X_holder = tf.placeholder(tf.float32,shape=[None,784])
+        y_holder = tf.placeholder(tf.float32,shape=[None,784])
+    with tf.name_scope('parameters'):
+        Weights = tf.Variable(tf.zeros([784, 10]))
+        biases = tf.Variable(tf.zeros([1,10]))
+    y = []
+    p = []
+    tower_grads = []
+    tower_input_loss = []
+    sn_op = []
+    optimizer = tf.train.GradientDescentOptimizer(0.5)
+    global_step = tf.train.get_or_create_global_step()
+    with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
+        for i in range(len(config.GPU.split(','))):
+            gpu = config.GPU.split(',')[i]
+            with tf.device(gpu):
+                with tf.name_scope('tower_' + gpu[-1]):
+                    predict_y = tf.nn.softmax(
+                        tf.matmul(X_holder[i * config.batch_size:(i + 1) * config.batch_size], Weights) + biases)
+                    loss = tf.reduce_mean(
+                        -tf.reduce_sum(y_holder[i * config.batch_size:(i + 1) * config.batch_size] * tf.log(predict_y),
+                                       1))
+                    grads = optimizer.compute_gradients(loss, var_list=tf.get_collection(
+                        tf.GraphKeys.TRAINABLE_VARIABLES,
+                        scope='parameters'
+                    ))
+                    train_op = optimizer.minimize(loss)
+                    tower_grads.append(grads)
+                    tower_input_loss.append(loss)
+                    sn_op.append(train_op)
+                    p.append(predict_y)
+    p = tf.concat(p, axis=0)
+    grads = modules.average_gradients(tower_grads)
+    input_loss = tf.reduce_mean(tower_input_loss)
+
+    train_op = optimizer.apply_gradients(grads)
+    #train_op = tf.group(train_op, [tf.assign_add(global_step, 1)])
+    train_op = tf.group(train_op, sn_op)
+    return X_holder, y_holder, p, input_loss, optimizer, train_op,grads
