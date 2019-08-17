@@ -156,7 +156,7 @@ def main():
     features["input_mask"] = tf.placeholder(tf.int32, shape=[None, Config.max_seq_length])
     features["segment_ids"] = tf.placeholder(tf.int32, shape=[None, Config.max_seq_length])
     features["label_ids"] = tf.placeholder(tf.int32, shape=[None])
-    [loss,train_op] = model_fn(features,None,'train',None)
+    [loss,train_op,predictions,accuracy] = model_fn(features,None,'train',None)
 # if 1:
 #     x0 = np.random.randint(0, 100,size=[32,Config.max_seq_length])
 #     x1 = np.random.randint(0, 1, size=[32, Config.max_seq_length])
