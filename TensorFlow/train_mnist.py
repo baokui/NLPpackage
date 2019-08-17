@@ -45,7 +45,7 @@ def main():
     t1 = time.time()
     print('single_gpu:',t1-t0)
     t0 = time.time()
-    #test_multiGPU()
+    test_multiGPU()
     t1 = time.time()
     print('multi_gpu:', t1 - t0)
 if __name__=='__main__':
