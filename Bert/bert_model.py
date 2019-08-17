@@ -281,6 +281,19 @@ def iter_training(tokenizer,A,B,L,Config):
             segment_ids = []
             labels = []
     yield '__end__'
+def dev_data(tokenizer,A,B,L,Config):
+    input_ids = []
+    input_mask = []
+    segment_ids = []
+    labels = []
+    for i in range(len(A)):
+        x0,x1,x2 = convert_single_example(A[i],B[i],Config.max_seq_length,tokenizer)
+        y = int(L[i])
+        input_ids.append(x0)
+        input_mask.append(x1)
+        segment_ids.append(x2)
+        labels.append((y))
+    return input_ids,input_mask,segment_ids,labels
 def main():
     Config = config.Config_bert()
     bert_config = modeling.BertConfig.from_json_file(Config.bert_config_file)
@@ -308,22 +321,38 @@ def main():
     A = A[1:]
     B = B[1:]
     L = L[1:]
+    At,Bt,Lt = pro.get_dev_examples(Config.data_dir)
+    At = At[1:]
+    Bt = Bt[1:]
+    Lt = Lt[1:]
+
     tokenizer = tokenization.FullTokenizer(
         vocab_file=Config.vocab_file, do_lower_case=Config.do_lower_case)
     iter = iter_training(tokenizer, A, B, L, Config)
+    X0,X1,X2,Y = dev_data(tokenizer, At, Bt, Lt, Config)
     [x0,x1,x2,y] = next(iter)
-
-# if 1:
-#     x0 = np.random.randint(0, 100,size=[32,Config.max_seq_length])
-#     x1 = np.random.randint(0, 1, size=[32, Config.max_seq_length])
-#     x2 = np.random.randint(0, 1, size=[32, Config.max_seq_length])
-#     y = np.random.randint(0,1,size=[32])
-#     feed_dict={features["input_ids"]:x0,features["input_mask"]:x1,features["segment_ids"]:x2,features["label_ids"]:y}
-#     sess = tf.Session()
-#     init = tf.global_variables_initializer()
-#     sess.run(init)
-#     for i in range(1000):
-#         [_loss,_] = sess.run([loss,train_op],feed_dict=feed_dict)
-#         if i%10==0:
-#             _acc = sess.run(accuracy,feed_dict=feed_dict)
-#             print(_loss,_acc)
+    sess = tf.Session()
+    init = tf.global_variables_initializer()
+    sess.run(init)
+    epoch = 0
+    i = 0
+    j = 0
+    while epoch<Config.epochs:
+        data = next(iter)
+        if data=='__end__':
+            epoch += 1
+            iter = iter_training(tokenizer, A, B, L, Config)
+        [x0, x1, x2, y] = data
+        feed_dict={features["input_ids"]:x0,features["input_mask"]:x1,features["segment_ids"]:x2,features["label_ids"]:y}
+        [_loss, _] = sess.run([loss, train_op], feed_dict=feed_dict)
+        if i % 100 == 0:
+            x0 = X0[j*Config.eval_batch_size:(j+1)*Config.eval_batch_size]
+            x1 = X1[j*Config.eval_batch_size:(j+1)*Config.eval_batch_size]
+            x2 = X2[j*Config.eval_batch_size:(j+1)*Config.eval_batch_size]
+            y = Y[j*Config.eval_batch_size:(j+1)*Config.eval_batch_size]
+            feed_dict={features["input_ids"]:x0,features["input_mask"]:x1,features["segment_ids"]:x2,features["label_ids"]:y}
+            j += 1
+            if j*Config.eval_batch_size>=len(X0):
+                j = 0
+            _acc = sess.run(accuracy, feed_dict=feed_dict)
+            print(epoch,i,_loss, _acc)
