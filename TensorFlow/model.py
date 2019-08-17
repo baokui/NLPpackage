@@ -40,6 +40,19 @@ def model_mnist_simple(config):
         # optimizer = tf.train.GradientDescentOptimizer(0.5)
         # train = optimizer.minimize(loss)
 def model_mnist_simple_mutiGPU(config):
+    def average_gradients(tower_grads):
+        average_grads = []
+        for grad_and_vars in zip(*tower_grads):
+            grads = []
+            for g, _ in grad_and_vars:
+                expend_g = tf.expand_dims(g, 0)
+                grads.append(expend_g)
+            grad = tf.concat(grads, 0)
+            grad = tf.reduce_mean(grad, 0)
+            v = grad_and_vars[0][1]
+            grad_and_var = (grad, v)
+            average_grads.append(grad_and_var)
+        return average_grads
     batch_size = config.batch_size
     with tf.name_scope('inputs'):
         X_holder = tf.placeholder(tf.float32,shape=[None,784])
@@ -47,6 +60,7 @@ def model_mnist_simple_mutiGPU(config):
     with tf.name_scope('parameters'):
         Weights = tf.Variable(tf.zeros([784, 10]))
         biases = tf.Variable(tf.zeros([1,10]))
+    #global_step = tf.train.get_or_create_global_step()
     p = []
     tower_grads = []
     tower_input_loss = []
@@ -66,22 +80,22 @@ def model_mnist_simple_mutiGPU(config):
                         tf.GraphKeys.TRAINABLE_VARIABLES,
                         scope='parameters'
                     ))
-                    for g, _ in grads:
-                        if g is None:
-                            print(g, _)
-                    grads = [t for t in grads if t[0] is not None]
                     train_op = optimizer.minimize(loss)
                     tower_grads.append(grads)
                     tower_input_loss.append(loss)
                     sn_op.append(train_op)
                     p.append(predict_y)
     p = tf.concat(p, axis=0)
-    grads = modules.average_gradients(tower_grads)
+    # grads = modules.average_gradients(tower_grads)
     input_loss = tf.reduce_mean(tower_input_loss)
 
+    # train_op = optimizer.apply_gradients(grads)
+    # #train_op = tf.group(train_op, [tf.assign_add(global_step, 1)])
+    # train_op = tf.group(train_op, sn_op)
+
+    grads = average_gradients(tower_grads)
     train_op = optimizer.apply_gradients(grads)
-    #train_op = tf.group(train_op, [tf.assign_add(global_step, 1)])
-    train_op = tf.group(train_op, sn_op)
+
     predict_test = tf.nn.softmax(
         tf.matmul(X_holder, Weights) + biases)
     correct_prediction = tf.equal(tf.argmax(predict_test, 1), tf.argmax(y_holder, 1))
