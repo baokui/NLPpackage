@@ -10,7 +10,7 @@ def test_singleGPU():
     config = Config.Config_mnist()
     mnist = input_data.read_data_sets('data/MNIST_data', one_hot=True)
     config.nb_examples = mnist.train.num_examples
-    X_holder, y_holder, predict_y, loss, optimizer, train_op, _ = model_mnist_simple(config)
+    X_holder, y_holder, predict_y, loss, optimizer, train_op, _, accuracy = model_mnist_simple(config)
     session = tf.Session()
     init = tf.global_variables_initializer()
     session.run(init)
@@ -19,15 +19,14 @@ def test_singleGPU():
         images, labels = mnist.train.next_batch(config.batch_size)
         session.run(train_op, feed_dict={X_holder:images, y_holder:labels})
         if i % 25 == 0:
-            correct_prediction = tf.equal(tf.argmax(predict_y, 1), tf.argmax(y_holder, 1))
-            accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
             accuracy_value = session.run(accuracy, feed_dict={X_holder:mnist.test.images, y_holder:mnist.test.labels})
             print('step:%d accuracy:%.4f' %(i, accuracy_value))
 def test_multiGPU():
+if 1:
     config = Config.Config_mnist()
     mnist = input_data.read_data_sets('data/MNIST_data', one_hot=True)
     config.nb_examples = mnist.train.num_examples
-    X_holder, y_holder, predict_y, loss, optimizer, train_op, _ = model_mnist_simple_mutiGPU(config)
+    X_holder, y_holder, predict_y, loss, optimizer, train_op, _, accuracy = model_mnist_simple_mutiGPU(config)
     session = tf.Session()
     init = tf.global_variables_initializer()
     session.run(init)
@@ -35,8 +34,6 @@ def test_multiGPU():
         images, labels = mnist.train.next_batch(config.batch_size*len(config.GPU.split(',')))
         session.run(train_op, feed_dict={X_holder: images, y_holder: labels})
         if i % 25 == 0:
-            correct_prediction = tf.equal(tf.argmax(predict_y, 1), tf.argmax(y_holder, 1))
-            accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
             accuracy_value = session.run(accuracy, feed_dict={X_holder: mnist.test.images, y_holder: mnist.test.labels})
             print('step:%d accuracy:%.4f' % (i, accuracy_value))
 def main():

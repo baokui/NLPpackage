@@ -32,7 +32,9 @@ def model_mnist_simple(config):
                                       ))
         train_op = optimizer.minimize(loss)
         #train_op = optimizer.apply_gradients(zip(grads, tvars))
-        return X_holder, y_holder, predict_y, loss, optimizer, train_op,grads
+        correct_prediction = tf.equal(tf.argmax(predict_y, 1), tf.argmax(y_holder, 1))
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+        return X_holder, y_holder, predict_y, loss, optimizer, train_op,grads,accuracy
         # global_step = tf.train.get_or_create_global_step()
         # train_op = tf.group(optOp, [tf.assign_add(global_step, 1)])
         # optimizer = tf.train.GradientDescentOptimizer(0.5)
@@ -80,4 +82,8 @@ def model_mnist_simple_mutiGPU(config):
     train_op = optimizer.apply_gradients(grads)
     #train_op = tf.group(train_op, [tf.assign_add(global_step, 1)])
     train_op = tf.group(train_op, sn_op)
-    return X_holder, y_holder, p, input_loss, optimizer, train_op,grads
+    predict_test = tf.nn.softmax(
+        tf.matmul(X_holder, Weights) + biases)
+    correct_prediction = tf.equal(tf.argmax(predict_test, 1), tf.argmax(y_holder, 1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    return X_holder, y_holder, p, input_loss, optimizer, train_op,grads,accuracy
