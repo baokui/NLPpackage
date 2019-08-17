@@ -6,7 +6,7 @@ import optimization
 import tokenization
 import tensorflow as tf
 import config
-
+import numpy as np
 def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
                  labels, num_labels, use_one_hot_embeddings):
     """Creates a classification model."""
@@ -109,8 +109,10 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
             train_op = optimization.create_optimizer(
                 total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
-
-            output_spec = [total_loss,train_op]
+            predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            accuracy = tf.metrics.accuracy(
+                labels=label_ids, predictions=predictions, weights=is_real_example)
+            output_spec = [total_loss,train_op,predictions,accuracy]
         elif mode == tf.estimator.ModeKeys.EVAL:
 
             def metric_fn(per_example_loss, label_ids, logits, is_real_example):
@@ -155,4 +157,14 @@ def main():
     features["segment_ids"] = tf.placeholder(tf.int32, shape=[None, Config.max_seq_length])
     features["label_ids"] = tf.placeholder(tf.int32, shape=[None])
     [loss,train_op] = model_fn(features,None,'train',None)
+# if 1:
+#     x0 = np.random.randint(0, 100,size=[32,Config.max_seq_length])
+#     x1 = np.random.randint(0, 1, size=[32, Config.max_seq_length])
+#     x2 = np.random.randint(0, 1, size=[32, Config.max_seq_length])
+#     y = np.random.randint(0,1,size=[32])
+#     feed_dict={features["input_ids"]:x0,features["input_mask"]:x1,features["segment_ids"]:x2,features["label_ids"]:y}
+#     sess = tf.Session()
+#     init = tf.global_variables_initializer()
+#     sess.run(init)
+#     [_loss,_] = sess.run([loss,train_op],feed_dict=feed_dict)
 
