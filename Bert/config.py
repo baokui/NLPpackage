@@ -38,6 +38,7 @@ class Config_bert(object):
                  intermediate_size=1024,
                  hidden_size=300,
                  dim_latent=128,
+                 data_dir="/home/Research/NLP-Chinese-Corpus/NLP-Chinese-Corpus/ERNIE_task_data/lcqmc/",
                  bert_config_file="",
                  vocab_file="",
                  init_checkpoint="",
@@ -83,6 +84,7 @@ class Config_bert(object):
         self.LOG_path = LOG_path
         self.dim_latent = dim_latent
         self.training_steps = training_steps
+        self.data_dir = data_dir
         self.bert_config_file = bert_config_file
         self.vocab_file = vocab_file
         self.init_checkpoint=init_checkpoint

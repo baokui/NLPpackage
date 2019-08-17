@@ -7,6 +7,8 @@ import tokenization
 import tensorflow as tf
 import config
 import numpy as np
+
+
 def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
                  labels, num_labels, use_one_hot_embeddings):
     """Creates a classification model."""
@@ -112,7 +114,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
             predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
             correct_prediction = tf.equal(predictions, label_ids)
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-            output_spec = [total_loss,train_op,predictions,accuracy]
+            output_spec = [total_loss, train_op, predictions, accuracy]
         elif mode == tf.estimator.ModeKeys.EVAL:
 
             def metric_fn(per_example_loss, label_ids, logits, is_real_example):
@@ -127,12 +129,88 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
             eval_metrics = (metric_fn,
                             [per_example_loss, label_ids, logits, is_real_example])
-            output_spec = [total_loss,eval_metrics]
+            output_spec = [total_loss, eval_metrics]
         else:
             output_spec = [{"probabilities": probabilities}]
         return output_spec
 
     return model_fn
+
+
+class DataProcessor(object):
+    """Base class for data converters for sequence classification data sets."""
+
+    def get_train_examples(self, data_dir):
+        """Gets a collection of `InputExample`s for the train set."""
+        raise NotImplementedError()
+
+    def get_dev_examples(self, data_dir):
+        """Gets a collection of `InputExample`s for the dev set."""
+        raise NotImplementedError()
+
+    def get_test_examples(self, data_dir):
+        """Gets a collection of `InputExample`s for prediction."""
+        raise NotImplementedError()
+
+    def get_labels(self):
+        """Gets the list of labels for this data set."""
+        raise NotImplementedError()
+
+    @classmethod
+    def _read_tsv(cls, input_file, quotechar=None):
+        """Reads a tab separated value file."""
+        with tf.gfile.Open(input_file, "r") as f:
+            reader = csv.reader(f, delimiter="\t", quotechar=quotechar)
+            lines = []
+            for line in reader:
+                lines.append(line)
+            return lines
+
+
+class ColaProcessor(DataProcessor):
+    """Processor for the CoLA data set (GLUE version)."""
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "train.tsv")), "train")
+
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "dev.tsv")), "dev")
+
+    def get_test_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "test.tsv")), "test")
+
+    def get_labels(self):
+        """See base class."""
+        return ["0", "1"]
+
+    def _create_examples(self, lines, set_type):
+        """Creates examples for the training and dev sets."""
+        A = []
+        B = []
+        L = []
+        for (i, line) in enumerate(lines):
+            # Only the test set has a header
+            if set_type == "test" and i == 0:
+                continue
+            guid = "%s-%s" % (set_type, i)
+            if set_type == "test":
+                text_a = tokenization.convert_to_unicode(line[0])
+                text_b = tokenization.convert_to_unicode(line[1])
+                label = "0"
+            else:
+                text_a = tokenization.convert_to_unicode(line[0])
+                text_b = tokenization.convert_to_unicode(line[1])
+                label = tokenization.convert_to_unicode(line[2])
+            A.append(text_a)
+            B.append(text_b)
+            L.append(label)
+        return A, B, L
 
 
 def main():
@@ -152,11 +230,14 @@ def main():
         use_tpu=Config.use_tpu,
         use_one_hot_embeddings=Config.use_tpu)
     features = {}
-    features["input_ids"] = tf.placeholder(tf.int32,shape=[None,Config.max_seq_length])
+    features["input_ids"] = tf.placeholder(tf.int32, shape=[None, Config.max_seq_length])
     features["input_mask"] = tf.placeholder(tf.int32, shape=[None, Config.max_seq_length])
     features["segment_ids"] = tf.placeholder(tf.int32, shape=[None, Config.max_seq_length])
     features["label_ids"] = tf.placeholder(tf.int32, shape=[None])
-    [loss,train_op,predictions,accuracy] = model_fn(features,None,'train',None)
+    [loss, train_op, predictions, accuracy] = model_fn(features, None, 'train', None)
+    pro = ColaProcessor()
+    A,B,L = pro.get_train_examples(Config.data_dir)
+
 # if 1:
 #     x0 = np.random.randint(0, 100,size=[32,Config.max_seq_length])
 #     x1 = np.random.randint(0, 1, size=[32, Config.max_seq_length])
@@ -171,5 +252,3 @@ def main():
 #         if i%10==0:
 #             _acc = sess.run(accuracy,feed_dict=feed_dict)
 #             print(_loss,_acc)
-
-
