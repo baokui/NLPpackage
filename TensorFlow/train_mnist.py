@@ -15,7 +15,7 @@ def test_singleGPU():
     init = tf.global_variables_initializer()
     session.run(init)
 
-    for i in range(500):
+    for i in range(5000):
         images, labels = mnist.train.next_batch(config.batch_size)
         session.run(train_op, feed_dict={X_holder:images, y_holder:labels})
         if i % 25 == 0:
@@ -31,7 +31,7 @@ def test_multiGPU():
     session = tf.Session()
     init = tf.global_variables_initializer()
     session.run(init)
-    for i in range(500):
+    for i in range(5000):
         images, labels = mnist.train.next_batch(config.batch_size*len(config.GPU.split(',')))
         session.run(train_op, feed_dict={X_holder: images, y_holder: labels})
         if i % 25 == 0:

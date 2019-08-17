@@ -41,7 +41,7 @@ def model_mnist_simple_mutiGPU(config):
     batch_size = config.batch_size
     with tf.name_scope('inputs'):
         X_holder = tf.placeholder(tf.float32,shape=[None,784])
-        y_holder = tf.placeholder(tf.float32,shape=[None])
+        y_holder = tf.placeholder(tf.float32,shape=[None,10])
     with tf.name_scope('parameters'):
         Weights = tf.Variable(tf.zeros([784, 10]))
         biases = tf.Variable(tf.zeros([1,10]))
