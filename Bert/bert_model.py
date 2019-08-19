@@ -325,7 +325,6 @@ def main():
     At = At[1:]
     Bt = Bt[1:]
     Lt = Lt[1:]
-
     tokenizer = tokenization.FullTokenizer(
         vocab_file=Config.vocab_file, do_lower_case=Config.do_lower_case)
     iter = iter_training(tokenizer, A, B, L, Config)
@@ -342,6 +341,7 @@ def main():
         if data=='__end__':
             epoch += 1
             iter = iter_training(tokenizer, A, B, L, Config)
+            continue
         [x0, x1, x2, y] = data
         feed_dict={features["input_ids"]:x0,features["input_mask"]:x1,features["segment_ids"]:x2,features["label_ids"]:y}
         [_loss, _] = sess.run([loss, train_op], feed_dict=feed_dict)
