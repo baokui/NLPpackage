@@ -332,8 +332,6 @@ def main():
         vocab_file=Config.vocab_file, do_lower_case=Config.do_lower_case)
     iter = iter_training(tokenizer, A, B, L, Config)
     X0,X1,X2,Y = dev_data(tokenizer, At, Bt, Lt, Config)
-    [x0,x1,x2,y] = next(iter)
-
     sess = tf.Session()
     saver = tf.train.Saver(max_to_keep=None, keep_checkpoint_every_n_hours=12)
     init = tf.global_variables_initializer()
