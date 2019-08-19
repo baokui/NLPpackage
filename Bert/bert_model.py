@@ -422,4 +422,11 @@ def evaluation():
     print(S/T)
 
 if __name__=='__main__':
-    main()
+    import sys
+    if len(sys.argv)==1:
+        main()
+    else:
+        if sys.argv[1]=='train':
+            main()
+        else:
+            evaluation()
