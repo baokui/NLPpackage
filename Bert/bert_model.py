@@ -419,7 +419,7 @@ def evaluation():
         r.append([len(x0),_acc])
     S = sum([rr[0] for rr in r])
     T = sum([rr[0]*rr[1] for rr in r])
-    print(S/T)
+    print(T/S)
 
 if __name__=='__main__':
     import sys
