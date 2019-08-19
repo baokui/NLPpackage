@@ -362,5 +362,64 @@ def main():
             print(epoch,i,_loss, _acc)
             saver.save(sess, 'CKPT/bert_lcqmc', global_step=global_step)
         i += 1
+def evaluation():
+    Config = config.Config_bert()
+    bert_config = modeling.BertConfig.from_json_file(Config.bert_config_file)
+    train_examples = [i for i in range(1000000)]
+    num_train_steps = int(
+        len(train_examples) / Config.train_batch_size * Config.num_train_epochs)
+    num_warmup_steps = int(num_train_steps * Config.warmup_proportion)
+    model_fn = model_fn_builder(
+        bert_config=bert_config,
+        num_labels=2,
+        init_checkpoint=Config.init_checkpoint,
+        learning_rate=Config.learning_rate,
+        num_train_steps=num_train_steps,
+        num_warmup_steps=num_warmup_steps,
+        use_tpu=Config.use_tpu,
+        use_one_hot_embeddings=Config.use_tpu)
+    features = {}
+    features["input_ids"] = tf.placeholder(tf.int32, shape=[None, Config.max_seq_length])
+    features["input_mask"] = tf.placeholder(tf.int32, shape=[None, Config.max_seq_length])
+    features["segment_ids"] = tf.placeholder(tf.int32, shape=[None, Config.max_seq_length])
+    features["label_ids"] = tf.placeholder(tf.int32, shape=[None])
+    [loss, train_op, predictions, accuracy] = model_fn(features, None, 'train', None)
+    global_step = tf.train.get_or_create_global_step()
+    train_op = tf.group(train_op, [tf.assign_add(global_step, 1)])
+    pro = ColaProcessor()
+    A, B, L = pro.get_train_examples(Config.data_dir)
+    A = A[1:]
+    B = B[1:]
+    L = L[1:]
+    At, Bt, Lt = pro.get_dev_examples(Config.data_dir)
+    At = At[1:]
+    Bt = Bt[1:]
+    Lt = Lt[1:]
+    tokenizer = tokenization.FullTokenizer(
+        vocab_file=Config.vocab_file, do_lower_case=Config.do_lower_case)
+    X0, X1, X2, Y = dev_data(tokenizer, At, Bt, Lt, Config)
+    sess = tf.Session()
+    saver = tf.train.Saver(max_to_keep=None, keep_checkpoint_every_n_hours=12)
+    model_file = tf.train.latest_checkpoint('CKPT/')
+    saver.restore(sess, model_file)
+    j = 0
+    r = []
+    while True:
+        x0 = X0[j * Config.eval_batch_size:(j + 1) * Config.eval_batch_size]
+        x1 = X1[j * Config.eval_batch_size:(j + 1) * Config.eval_batch_size]
+        x2 = X2[j * Config.eval_batch_size:(j + 1) * Config.eval_batch_size]
+        y = Y[j * Config.eval_batch_size:(j + 1) * Config.eval_batch_size]
+        feed_dict = {features["input_ids"]: x0, features["input_mask"]: x1, features["segment_ids"]: x2,
+                     features["label_ids"]: y}
+        j += 1
+        if j * Config.eval_batch_size >= len(X0):
+            break
+        _acc = sess.run(accuracy, feed_dict=feed_dict)
+        print(j,len(x0),_acc)
+        r.append([len(x0),_acc])
+    S = sum([rr[0] for rr in r])
+    T = sum([rr[0]*rr[1] for rr in r])
+    print(S/T)
+
 if __name__=='__main__':
     main()
