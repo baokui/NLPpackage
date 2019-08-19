@@ -261,6 +261,7 @@ def convert_single_example(text_a,text_b, max_seq_length,
         input_ids.append(0)
         input_mask.append(0)
         segment_ids.append(0)
+    input_ids, input_mask, segment_ids = input_ids[:max_seq_length],input_mask[:max_seq_length],segment_ids[:max_seq_length]
     return input_ids,input_mask,segment_ids
 def iter_training(tokenizer,A,B,L,Config):
     input_ids = []
