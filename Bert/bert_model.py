@@ -316,6 +316,8 @@ def main():
     features["segment_ids"] = tf.placeholder(tf.int32, shape=[None, Config.max_seq_length])
     features["label_ids"] = tf.placeholder(tf.int32, shape=[None])
     [loss, train_op, predictions, accuracy] = model_fn(features, None, 'train', None)
+    global_step = tf.train.get_or_create_global_step()
+    train_op = tf.group(train_op, [tf.assign_add(global_step, 1)])
     pro = ColaProcessor()
     A,B,L = pro.get_train_examples(Config.data_dir)
     A = A[1:]
@@ -330,7 +332,9 @@ def main():
     iter = iter_training(tokenizer, A, B, L, Config)
     X0,X1,X2,Y = dev_data(tokenizer, At, Bt, Lt, Config)
     [x0,x1,x2,y] = next(iter)
+
     sess = tf.Session()
+    saver = tf.train.Saver(max_to_keep=None, keep_checkpoint_every_n_hours=12)
     init = tf.global_variables_initializer()
     sess.run(init)
     epoch = 0
@@ -356,6 +360,7 @@ def main():
                 j = 0
             _acc = sess.run(accuracy, feed_dict=feed_dict)
             print(epoch,i,_loss, _acc)
+            saver.save(sess, 'CKPT/bert_lcqmc', global_step=global_step)
         i += 1
 if __name__=='__main__':
     main()
