@@ -8,7 +8,7 @@ import tempfile
 import zipfile
 import os
 
-mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
+mnist = input_data.read_data_sets('../TensorFlow/data/MNIST_data', one_hot=True)
 x_train, y_train = mnist.train.next_batch(60000)
 x_test, y_test = mnist.train.next_batch(10000)
 batch_size = 32
